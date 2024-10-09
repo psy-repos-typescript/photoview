@@ -11,10 +11,11 @@ on:
 
 env:
   IS_PUSHING_IMAGES: ${{ github.event_name != 'pull_request' && github.repository == 'photoview/photoview' }}
+  IS_CACHING: ${{ github.event_name == 'pull_request' }}
   DOCKER_USERNAME: viktorstrate
   DOCKER_IMAGE: viktorstrate/dependencies
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
   build:
@@ -48,6 +49,7 @@ jobs:
           images: ${{ env.DOCKER_IMAGE }}
           # Docker tags based on the following events/attributes
           tags: |
+            type=raw,value=latest
             type=sha
 
       - name: Build and push
@@ -59,8 +61,9 @@ jobs:
           push: ${{ env.IS_PUSHING_IMAGES }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: ${{ ( github.event_name == 'pull_request' && 'type=gha' ) || 'type=local' }}
-          cache-to: ${{ ( github.event_name == 'pull_request' && 'type=gha,mode=max' ) || 'type=local' }}
+          annotations: ${{ steps.docker_meta.outputs.annotations }}
+          cache-from: ${{ ( env.IS_CACHING == 'true' && 'type=gha' ) || '' }}
+          cache-to: ${{ ( env.IS_CACHING == 'true' && 'type=gha,mode=max' ) || '' }}
+          no-cache: ${{ env.IS_CACHING != 'true' }}
           sbom: true
           provenance: mode=max
-          annotations: ${{ steps.docker_meta.outputs.annotations }}

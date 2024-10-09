@@ -17,7 +17,9 @@ func TestMain(m *testing.M) {
 func setPathWithCurrent(paths ...string) func() {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
-		return func() {}
+		return func() {
+			// Return an empty function in case of error
+		}
 	}
 
 	base := filepath.Dir(file)
@@ -31,5 +33,13 @@ func setPathWithCurrent(paths ...string) func() {
 
 	return func() {
 		os.Setenv("PATH", originalPath)
+	}
+}
+
+func setEnv(key, value string) func() {
+	org := os.Getenv(key)
+	os.Setenv(key, value)
+	return func() {
+		os.Setenv(key, org)
 	}
 }
